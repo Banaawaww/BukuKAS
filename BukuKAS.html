@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BankDB — Buku Kas Tabungan</title>
+<style>
+  :root{
+    --navy-900:#0a1f3d; --navy-800:#0f2a4f; --navy-700:#16365f; --navy-600:#1e4575;
+    --blue-500:#2f6fed; --blue-50:#eef4ff;
+    --green-600:#16a34a; --green-50:#ecfdf3;
+    --red-600:#dc2626; --red-50:#fef2f2;
+    --amber-600:#d97706; --amber-50:#fffbeb;
+    --slate-50:#f6f8fb; --slate-100:#eef1f6; --slate-200:#e2e7f0; --slate-300:#cbd3e1;
+    --slate-500:#64748b; --slate-600:#475569; --slate-700:#334155; --slate-800:#1e293b;
+    --radius:14px; --shadow:0 1px 3px rgba(15,42,79,.08),0 6px 16px rgba(15,42,79,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Segoe UI',Roboto,system-ui,Arial,sans-serif;
+    background:var(--slate-50);
+    color:var(--slate-800);
+    -webkit-font-smoothing:antialiased;
+  }
+  a,button{font-family:inherit}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+
+  /* Header */
+  header.topbar{
+    background:linear-gradient(135deg,var(--navy-900),var(--navy-700));
+    color:#fff; box-shadow:0 4px 18px rgba(10,31,61,.25);
+    position:sticky; top:0; z-index:30;
+  }
+  header.topbar .inner{display:flex;align-items:center;justify-content:space-between;padding:16px 20px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .logo{
+    width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.12);
+    display:flex;align-items:center;justify-content:center;font-size:20px;
+    border:1px solid rgba(255,255,255,.18);
+  }
+  .brand h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.2px}
+  .brand p{font-size:12px;margin:2px 0 0;color:#a9c1e8}
+  .status-pill{
+    font-size:11px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.18);color:#cfe0ff;
+  }
+
+  main{padding:28px 0 60px}
+  .section{margin-bottom:26px}
+  .card{
+    background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
+    border:1px solid var(--slate-200);
+  }
+
+  /* Stats grid */
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .stat-card{padding:18px 20px;position:relative;overflow:hidden}
+  .stat-card .icon{
+    position:absolute;right:14px;top:14px;font-size:22px;opacity:.18;
+  }
+  .stat-label{font-size:12px;color:var(--slate-500);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin:0 0 8px}
+  .stat-value{font-size:21px;font-weight:800;margin:0;letter-spacing:-.2px}
+  .stat-value small{font-size:13px;font-weight:600;opacity:.7;margin-right:2px}
+  .stat-card.bal .stat-value{color:var(--navy-700)}
+  .stat-card.credit .stat-value{color:var(--green-600)}
+  .stat-card.debit .stat-value{color:var(--red-600)}
+  .stat-card.net .stat-value{color:var(--amber-600)}
+  .stat-card.bal{border-top:3px solid var(--blue-500)}
+  .stat-card.credit{border-top:3px solid var(--green-600)}
+  .stat-card.debit{border-top:3px solid var(--red-600)}
+  .stat-card.net{border-top:3px solid var(--amber-600)}
+
+  /* Form */
+  .form-card{padding:22px}
+  .form-title{margin:0 0 16px;font-size:15px;font-weight:700;color:var(--navy-800);display:flex;align-items:center;gap:8px}
+  form.tx-form{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;align-items:end}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field.span2{grid-column:span 2}
+  .field label{font-size:11.5px;font-weight:700;color:var(--slate-500);text-transform:uppercase;letter-spacing:.3px}
+  .field input,.field select{
+    border:1.5px solid var(--slate-200);border-radius:9px;padding:9px 11px;
+    font-size:13.5px;color:var(--slate-800);background:#fcfdff;
+    transition:border-color .15s,box-shadow .15s;
+  }
+  .field input:focus,.field select:focus{
+    outline:none;border-color:var(--blue-500);box-shadow:0 0 0 3px rgba(47,111,237,.15);background:#fff;
+  }
+  .form-actions{grid-column:span 6;display:flex;justify-content:flex-end;gap:10px;margin-top:2px}
+  .btn{
+    border:none;border-radius:9px;padding:10px 18px;font-size:13.5px;font-weight:700;
+    cursor:pointer;transition:transform .08s,opacity .15s,background .15s;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn-primary{background:linear-gradient(135deg,var(--navy-700),var(--blue-500));color:#fff;box-shadow:0 4px 12px rgba(47,111,237,.3)}
+  .btn-primary:hover{opacity:.92}
+  .btn-ghost{background:#fff;color:var(--slate-600);border:1.5px solid var(--slate-300)}
+  .btn-ghost:hover{background:var(--slate-100)}
+  .btn-export{background:linear-gradient(135deg,#0f9b5e,var(--green-600));color:#fff;box-shadow:0 4px 12px rgba(22,163,74,.3)}
+  .btn-export:hover{opacity:.92}
+  .btn-export:disabled{opacity:.5;cursor:not-allowed}
+
+  /* Table card */
+  .table-card .head{
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+    padding:16px 20px;border-bottom:1px solid var(--slate-200);
+  }
+  .table-card .head h2{margin:0;font-size:14.5px;font-weight:700;color:var(--navy-800)}
+  .month-picker{display:flex;align-items:center;gap:10px}
+  .month-picker input{border:1.5px solid var(--slate-200);border-radius:9px;padding:7px 10px;font-size:13px}
+  .table-scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:680px}
+  thead th{
+    text-align:left;background:var(--slate-100);color:var(--slate-600);
+    font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;
+    padding:11px 16px;white-space:nowrap;border-bottom:1px solid var(--slate-200);
+  }
+  thead th.num,td.num{text-align:right}
+  tbody td{padding:11px 16px;border-bottom:1px solid var(--slate-100);white-space:nowrap}
+  tbody td.desc-cell{white-space:normal;min-width:140px}
+  tbody tr:nth-child(even){background:var(--slate-50)}
+  tbody tr:hover{background:var(--blue-50)}
+  tbody tr:last-child td{border-bottom:none}
+  .cat-tag{
+    font-size:11px;background:var(--slate-100);color:var(--slate-600);
+    padding:3px 9px;border-radius:999px;font-weight:600;
+  }
+  .amt-debit{color:var(--red-600);font-weight:600}
+  .amt-credit{color:var(--green-600);font-weight:600}
+  .amt-bal{font-weight:800;color:var(--navy-700)}
+  .row-actions button{
+    border:none;background:none;cursor:pointer;font-size:12px;font-weight:700;
+    padding:3px 6px;border-radius:6px;
+  }
+  .row-actions .edit{color:var(--blue-500)}
+  .row-actions .edit:hover{background:var(--blue-50)}
+  .row-actions .del{color:var(--red-600)}
+  .row-actions .del:hover{background:var(--red-50)}
+  .empty-row td{text-align:center;padding:32px;color:var(--slate-500);font-size:13px}
+  .month-summary{
+    padding:13px 20px;text-align:right;font-size:13px;font-weight:700;color:var(--navy-800);
+    border-top:1px solid var(--slate-200);background:var(--slate-50);border-radius:0 0 var(--radius) var(--radius);
+  }
+  .month-summary span.pos{color:var(--green-600)}
+  .month-summary span.neg{color:var(--red-600)}
+
+  .toast{
+    position:fixed;bottom:22px;right:22px;background:var(--navy-800);color:#fff;
+    padding:12px 18px;border-radius:10px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);
+    opacity:0;transform:translateY(10px);transition:opacity .25s,transform .25s;pointer-events:none;z-index:50;
+  }
+  .toast.show{opacity:1;transform:translateY(0)}
+
+  @media(max-width:880px){
+    .stats-grid{grid-template-columns:repeat(2,1fr)}
+    form.tx-form{grid-template-columns:repeat(2,1fr)}
+    .field.span2{grid-column:span 2}
+    .form-actions{grid-column:span 2}
+  }
+  @media(max-width:480px){
+    .stats-grid{grid-template-columns:1fr}
+    form.tx-form{grid-template-columns:1fr}
+    .field.span2{grid-column:span 1}
+    .form-actions{grid-column:span 1}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap inner">
+    <div class="brand">
+      <div class="logo">🏦</div>
+      <div>
+        <h1>BankDB Ledger</h1>
+        <p>Buku Kas Tabungan Harian · Offline</p>
+      </div>
+    </div>
+    <span class="status-pill" id="dbStatus">Menghubungkan ke database…</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section stats-grid" id="stats">
+    <div class="card stat-card bal"><div class="icon">💰</div><p class="stat-label">Total Saldo</p><p class="stat-value">—</p></div>
+    <div class="card stat-card credit"><div class="icon">⬆️</div><p class="stat-label">Total Credit</p><p class="stat-value">—</p></div>
+    <div class="card stat-card debit"><div class="icon">⬇️</div><p class="stat-label">Total Debit</p><p class="stat-value">—</p></div>
+    <div class="card stat-card net"><div class="icon">📈</div><p class="stat-label">Net Bulan Ini</p><p class="stat-value">—</p></div>
+  </section>
+
+  <section class="section card form-card">
+    <h2 class="form-title">✏️ Tambah / Ubah Transaksi</h2>
+    <form id="txForm" class="tx-form" autocomplete="off">
+      <input type="hidden" id="txId">
+      <div class="field">
+        <label>Tanggal</label>
+        <input type="date" id="fDate" required>
+      </div>
+      <div class="field span2">
+        <label>Deskripsi</label>
+        <input type="text" id="fDesc" required placeholder="cth: Beli kopi">
+      </div>
+      <div class="field">
+        <label>Kategori</label>
+        <select id="fCat">
+          <option>Food</option><option>Transport</option><option>Bills</option>
+          <option>Salary</option><option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tipe</label>
+        <select id="fType">
+          <option value="credit">Credit (Masuk)</option>
+          <option value="debit">Debit (Keluar)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Jumlah</label>
+        <input type="number" id="fAmt" required min="0" step="0.01" placeholder="0">
+      </div>
+      <div class="form-actions">
+        <button type="button" id="btnCancel" class="btn btn-ghost" style="display:none">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Transaksi</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="section card table-card">
+    <div class="head"><h2>🕒 10 Transaksi Terbaru</h2></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th>Tanggal</th><th>Deskripsi</th><th>Kategori</th>
+          <th class="num">Debit</th><th class="num">Credit</th><th class="num">Saldo</th><th></th>
+        </tr></thead>
+        <tbody id="latestBody"><tr class="empty-row"><td colspan="7">Memuat data…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section card table-card">
+    <div class="head">
+      <h2>📅 Tampilan Bulanan</h2>
+      <div class="month-picker">
+        <input type="month" id="monthPick">
+        <button id="btnExport" class="btn btn-export">📊 Cetak Bulanan (.xlsx)</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th>Tanggal</th><th>Deskripsi</th><th>Kategori</th>
+          <th class="num">Debit</th><th class="num">Credit</th><th class="num">Saldo</th><th></th>
+        </tr></thead>
+        <tbody id="monthBody"><tr class="empty-row"><td colspan="7">Memuat data…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="month-summary" id="monthSummary">—</div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- SheetJS untuk export Excel (perlu koneksi internet sekali saat load) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+(function(){
+"use strict";
+
+// -- Toast helper --
+let toastTimer;
+const toast = msg => {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+};
+
+// -- DB Setup (IndexedDB) --
+const DB_NAME = 'BankDB', STORE = 'transactions';
+let dbP = null;
+const getDB = () => dbP || (dbP = new Promise((resolve, reject) => {
+  if (!('indexedDB' in window)) { reject(new Error('IndexedDB tidak didukung browser ini')); return; }
+  const req = indexedDB.open(DB_NAME, 1);
+  req.onupgradeneeded = e => {
+    const db = e.target.result;
+    const s = db.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+    s.createIndex('date', 'date', { unique: false });
+  };
+  req.onsuccess = e => resolve(e.target.result);
+  req.onerror = () => reject(req.error);
+}));
+
+const txStore = async mode => (await getDB()).transaction(STORE, mode).objectStore(STORE);
+const getAllTx = async () => new Promise(async (resolve, reject) => {
+  const s = await txStore('readonly'); const r = s.getAll();
+  r.onsuccess = () => resolve(r.result);
+  r.onerror = () => reject(r.error);
+});
+const saveTx = async tx => new Promise(async (resolve, reject) => {
+  const s = await txStore('readwrite'); const r = s.put(tx);
+  r.onsuccess = () => resolve(r.result);
+  r.onerror = () => reject(r.error);
+});
+const delTx = async id => new Promise(async (resolve, reject) => {
+  const s = await txStore('readwrite'); const r = s.delete(id);
+  r.onsuccess = () => resolve();
+  r.onerror = () => reject(r.error);
+});
+
+// -- Helpers --
+const fmt = n => (Number(n) || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const monthOf = d => (d || '').slice(0, 7);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sortAsc = arr => [...arr].sort((a, b) => a.date === b.date ? a.id - b.id : a.date.localeCompare(b.date));
+
+let txs = []; // cache in-memory
+
+// -- Render Logic: satu fungsi mengupdate stats, tabel terbaru, dan tabel bulanan --
+const render = () => {
+  const sorted = sortAsc(txs);
+  let bal = 0;
+  const withBal = sorted.map(t => {
+    bal += t.type === 'credit' ? +t.amount : -(+t.amount);
+    return { ...t, runBal: bal };
+  });
+
+  const totalCredit = txs.filter(t => t.type === 'credit').reduce((s, t) => s + (+t.amount || 0), 0);
+  const totalDebit = txs.filter(t => t.type === 'debit').reduce((s, t) => s + (+t.amount || 0), 0);
+  const totalBalance = totalCredit - totalDebit;
+
+  const curMonth = document.getElementById('monthPick').value || monthOf(todayStr());
+  const monthTxs = sorted.filter(t => monthOf(t.date) === curMonth);
+  const netMonth = monthTxs.reduce((s, t) => s + (t.type === 'credit' ? +t.amount : -(+t.amount)), 0);
+
+  // Stats cards
+  const statCards = document.querySelectorAll('#stats .stat-card .stat-value');
+  const vals = [totalBalance, totalCredit, totalDebit, netMonth];
+  statCards.forEach((el, i) => { el.innerHTML = `<small>Rp</small>${fmt(vals[i])}`; });
+
+  // Latest 10
+  const latest10 = [...withBal].reverse().slice(0, 10);
+  document.getElementById('latestBody').innerHTML = rowsHTML(latest10);
+
+  // Monthly table (saldo berjalan dihitung ulang khusus untuk bulan ini)
+  let mbal = 0;
+  const monthWithBal = monthTxs.map(t => {
+    mbal += t.type === 'credit' ? +t.amount : -(+t.amount);
+    return { ...t, runBal: mbal };
+  });
+  document.getElementById('monthBody').innerHTML = rowsHTML([...monthWithBal].reverse());
+  const netClass = netMonth >= 0 ? 'pos' : 'neg';
+  document.getElementById('monthSummary').innerHTML =
+    `Saldo akhir bulan: Rp ${fmt(mbal)} &nbsp;|&nbsp; Net bulan: <span class="${netClass}">Rp ${fmt(netMonth)}</span>`;
+
+  window._monthExport = monthWithBal;
+  document.getElementById('btnExport').disabled = monthWithBal.length === 0 || typeof XLSX === 'undefined';
+};
+
+const rowsHTML = list => {
+  if (!list.length) return `<tr class="empty-row"><td colspan="7">Tidak ada transaksi</td></tr>`;
+  return list.map(t => `
+    <tr>
+      <td>${esc(t.date)}</td>
+      <td class="desc-cell">${esc(t.desc)}</td>
+      <td><span class="cat-tag">${esc(t.cat)}</span></td>
+      <td class="num">${t.type === 'debit' ? `<span class="amt-debit">${fmt(t.amount)}</span>` : ''}</td>
+      <td class="num">${t.type === 'credit' ? `<span class="amt-credit">${fmt(t.amount)}</span>` : ''}</td>
+      <td class="num amt-bal">${fmt(t.runBal)}</td>
+      <td class="row-actions">
+        <button class="edit" data-id="${t.id}">Ubah</button>
+        <button class="del" data-id="${t.id}">Hapus</button>
+      </td>
+    </tr>`).join('');
+};
+
+// -- Load + reload --
+const reload = async () => {
+  txs = await getAllTx();
+  render();
+};
+
+// -- Init defaults --
+const fDate = document.getElementById('fDate');
+const monthPick = document.getElementById('monthPick');
+fDate.value = todayStr();
+monthPick.value = monthOf(todayStr());
+
+// -- Form handling --
+const form = document.getElementById('txForm');
+const btnCancel = document.getElementById('btnCancel');
+
+const resetForm = () => {
+  form.reset();
+  fDate.value = todayStr();
+  document.getElementById('txId').value = '';
+  btnCancel.style.display = 'none';
+};
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  const id = document.getElementById('txId').value;
+  const amount = parseFloat(document.getElementById('fAmt').value);
+  if (!amount || amount <= 0) { toast('Jumlah harus lebih dari 0'); return; }
+  const tx = {
+    date: document.getElementById('fDate').value,
+    desc: document.getElementById('fDesc').value.trim(),
+    cat: document.getElementById('fCat').value,
+    type: document.getElementById('fType').value,
+    amount,
+  };
+  if (id) tx.id = +id;
+  try {
+    await saveTx(tx);
+    toast(id ? 'Transaksi diperbarui' : 'Transaksi ditambahkan');
+    resetForm();
+    await reload();
+  } catch (err) {
+    console.warn('Gagal menyimpan:', err);
+    toast('Gagal menyimpan transaksi');
+  }
+});
+
+btnCancel.addEventListener('click', resetForm);
+
+// -- Event delegation untuk tombol Ubah/Hapus di kedua tabel --
+document.addEventListener('click', async e => {
+  const editBtn = e.target.closest('.edit');
+  const delBtn = e.target.closest('.del');
+  if (editBtn) {
+    const t = txs.find(x => x.id === +editBtn.dataset.id);
+    if (!t) return;
+    document.getElementById('txId').value = t.id;
+    fDate.value = t.date;
+    document.getElementById('fDesc').value = t.desc;
+    document.getElementById('fCat').value = t.cat;
+    document.getElementById('fType').value = t.type;
+    document.getElementById('fAmt').value = t.amount;
+    btnCancel.style.display = 'inline-block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  if (delBtn) {
+    if (!confirm('Hapus transaksi ini?')) return;
+    try {
+      await delTx(+delBtn.dataset.id);
+      toast('Transaksi dihapus');
+      await reload();
+    } catch (err) {
+      console.warn('Gagal menghapus:', err);
+      toast('Gagal menghapus transaksi');
+    }
+  }
+});
+
+monthPick.addEventListener('change', render);
+
+// -- Excel Export (SheetJS) --
+document.getElementById('btnExport').addEventListener('click', () => {
+  if (typeof XLSX === 'undefined') { toast('Library Excel belum termuat. Cek koneksi internet.'); return; }
+  const data = window._monthExport || [];
+  if (!data.length) { toast('Tidak ada data untuk diekspor'); return; }
+  const month = monthPick.value;
+  const rows = [
+    ['Date', 'Description', 'Category', 'Debit', 'Credit', 'Balance'],
+    ...data.map(t => [
+      t.date, t.desc, t.cat,
+      t.type === 'debit' ? +t.amount : '',
+      t.type === 'credit' ? +t.amount : '',
+      t.runBal,
+    ]),
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ['D', 'E', 'F'].forEach(col => {
+    for (let r = 2; r <= rows.length; r++) {
+      const cell = ws[col + r];
+      if (cell && typeof cell.v === 'number') cell.z = '#,##0.00';
+    }
+  });
+  ws['!cols'] = rows[0].map((_, ci) => ({ wch: Math.max(...rows.map(r => String(r[ci] ?? '').length)) + 2 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Laporan Bulanan');
+  XLSX.writeFile(wb, `Laporan_Bulanan_${month}.xlsx`);
+  toast('File Excel berhasil dibuat');
+});
+
+// -- Boot --
+const statusEl = document.getElementById('dbStatus');
+getDB()
+  .then(() => { statusEl.textContent = '● Database siap (offline)'; return reload(); })
+  .catch(err => {
+    console.warn('DB error:', err);
+    statusEl.textContent = '● Gagal memuat database';
+    document.getElementById('latestBody').innerHTML = `<tr class="empty-row"><td colspan="7">Database tidak tersedia di browser ini</td></tr>`;
+    document.getElementById('monthBody').innerHTML = `<tr class="empty-row"><td colspan="7">Database tidak tersedia di browser ini</td></tr>`;
+  });
+
+})();
+</script>
+</body>
+</html>
